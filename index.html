@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}VisionAssist AI - Homepage & Interactive Demo{% endblock %}
+
+{% block content %}
+<style>
+    .hero-section {
+        padding: 5rem 0;
+        text-align: center;
+    }
+    .hero-content {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .demo-container {
+        display: flex;
+        flex-direction: column;
+        gap: 3rem;
+        padding-bottom: 5rem;
+    }
+    .demo-card {
+        background-color: var(--color-card-dark);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        padding: 2.5rem;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    }
+    .input-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .output-box {
+        background-color: var(--color-base-dark);
+        border: 2px dashed var(--color-text-dim);
+        min-height: 250px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    .action-button {
+        padding: 1rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .action-button:hover {
+        transform: translateY(-2px);
+    }
+    #videoFeed {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto 1rem;
+        border-radius: 8px;
+        transform: scaleX(-1);
+        background-color: #333;
+        display: none;
+    }
+</style>
+
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 style="font-size: 3.5rem; color: var(--color-primary);">VisionAssist AI Glasses</h1>
+        <p style="color: var(--color-text-dim); font-size: 1.5rem; margin-top: 0.5rem;">
+            "Seeing the World Through Sound" — Real-time guidance powered by Gemini.
+        </p>
+        <button onclick="document.getElementById('demo-section').scrollIntoView({ behavior: 'smooth' });" 
+                class="action-button" 
+                style="background-color: var(--color-primary); color: var(--color-text-light); border: none; margin-top: 2rem;">
+            Experience the Demo Now
+        </button>
+    </div>
+</section>
+
+<section id="demo-section" class="demo-container">
+    <h2 style="text-align: center; font-size: 2.5rem; color: var(--color-secondary);">Interactive Video Analysis</h2>
+    
+    <div class="demo-card" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem;">
+        
+        <!-- INPUT SIDE -->
+        <div>
+            <h3 style="color: var(--color-primary); margin-bottom: 1.5rem; font-weight: 700;">1. Select Input Source</h3>
+            <div class="input-controls">
+
+                <video id="videoFeed" playsinline autoplay></video>
+                <canvas id="videoCanvas" style="display: none;"></canvas>
+
+                <label for="video-upload-input" style="color: var(--color-text-light);">Upload Video File</label>
+                <input type="file" id="video-upload-input" accept="video/*">
+
+                <button id="upload-btn" class="action-button" disabled 
+                        style="background-color: var(--color-secondary); color: white; opacity: 0.5;">
+                    Analyze Uploaded Video
+                </button>
+
+                <div style="text-align: center; color: var(--color-text-dim);">--- OR ---</div>
+
+                <button id="live-toggle-btn" class="action-button" 
+                        style="background-color: #dc2626; color: white;">
+                    Start Live Stream Simulation
+                </button>
+
+                <!-- START VISION ASSIST BUTTON -->
+                <button onclick="startSimulation()" 
+                        class="action-button"
+                        style="background-color: #3b82f6; color: white;">
+                    Start Vision Assist
+                </button>
+
+                <video id="camera" width="350" autoplay playsinline 
+                       style="border-radius: 10px; display: none;"></video>
+
+                <div id="live-output"
+                     style="margin-top: 10px; font-size: 16px; color: white;">
+                </div>
+
+                <p id="live-status" style="color: var(--color-primary); text-align: center; font-weight: 600; display: none;">
+                    🔴 LIVE: Streaming and Analyzing...
+                </p>
+            </div>
+        </div>
+
+        <!-- OUTPUT SIDE -->
+        <div>
+            <h3 style="color: var(--color-primary); margin-bottom: 1.5rem; font-weight: 700;">2. AI Analysis & Audio Feedback</h3>
+            
+            <div id="output-box" class="output-box">
+                <p id="initial-msg" style="color: var(--color-text-dim);">Awaiting analysis data...</p>
+
+                <div id="loading-indicator" style="display: none; text-align: center;">
+                    <div class="loader"
+                         style="width: 40px; height: 40px; border: 4px solid rgba(56, 189, 248, 0.2); border-top-color: var(--color-primary); border-radius: 50%; margin: 0 auto; animation: spin 1s linear infinite;">
+                    </div>
+                    <p style="color: var(--color-primary); margin-top: 10px;">Processing Frame...</p>
+                </div>
+
+                <div id="results-display" style="display: none; width: 100%;">
+                    <h4 style="color: var(--color-secondary);">Detected Objects:</h4>
+                    <ul id="detection-list"></ul>
+                    
+                    <div style="padding: 1rem; background-color: var(--color-base-dark); border-radius: 6px;">
+                        <p style="font-weight: 600; color: var(--color-accent);">TTS Transcript:</p>
+                        <blockquote id="audio-text" style="color: var(--color-text-light); margin-top: 5px; font-style: italic;"></blockquote>
+                        <button id="tts-play-btn" class="action-button" 
+                                style="background-color: var(--color-accent); color: black;">
+                            ▶ Play Audio Feedback
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- FIXED, CLEAN, WORKING SCRIPT -->
+<script>
+
+let videoStream = null;
+let sending = false;
+
+async function startSimulation() {
+    const video = document.getElementById("camera");
+    const output = document.getElementById("live-output");
+
+    try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = videoStream;
+        video.style.display = "block";
+        video.play();
+    } catch (err) {
+        output.innerText = "Camera access error: " + err;
+        return;
+    }
+
+    output.innerText = "Starting VisionAssist AI...";
+    sending = true;
+    captureLoop();
+}
+
+async function captureLoop() {
+    if (!sending) return;
+
+    const video = document.getElementById("camera");
+    const canvas = document.createElement("canvas");
+    canvas.width = 400;
+    canvas.height = 300;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const frameBase64 = canvas.toDataURL("image/jpeg");
+
+    try {
+        const res = await fetch("/api/analyze-frame", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image_data: frameBase64 })
+        });
+
+        const data = await res.json();
+
+        if (data.status === "ok") {
+            updateUI(data);
+        } else {
+            console.error("AI Error:", data.error);
+        }
+
+    } catch (err) {
+        console.error("Server error:", err);
+        document.getElementById("live-output").innerText = "Error communicating with server.";
+    }
+
+    // Wait 2–3 seconds before next frame
+    setTimeout(captureLoop, 2500);
+}
+
+function updateUI(data) {
+    const output = document.getElementById("live-output");
+
+    // Update detected objects
+    const objectsList = data.detectedObjects.length > 0
+        ? data.detectedObjects.map(o => `• ${o.name} (${Math.round((o.confidence||0)*100)}%)` +
+            (o.warning ? " ⚠️" : "")).join("<br>")
+        : "No objects detected";
+
+    output.innerHTML = `
+        <b>Prompt Used:</b> ${data.prompt_used}<br><br>
+        <b>AI Description:</b> ${data.audioDescription}<br><br>
+        <b>Detected Objects:</b><br>${objectsList}
+    `;
+
+    // Speak the AI description aloud
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(data.audioDescription);
+        utterance.rate = 1; // normal speed
+        window.speechSynthesis.cancel(); // stop any ongoing speech
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+// Stop simulation when needed
+function stopSimulation() {
+    sending = false;
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+    }
+    document.getElementById("live-output").innerText = "Simulation stopped.";
+}
+</script>
+
+
+
+
+
+{% endblock %}
