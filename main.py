@@ -1,194 +1,26 @@
-# from flask import Flask, render_template, request, jsonify, Blueprint
-# import requests
-# import base64
-# import time
-
-# main_bp = Blueprint("main", __name__)
-# main_bp.secret_key = "supersecretkey"  # for flash messages
-
-# # ---------------------------
-# # Your Gemini API key (add here)
-# # ---------------------------
-# GEMINI_API_KEY = "AIzaSyA-pKwWpXu2EZkaPh5D-RSvIReGWKuIzXA"  # 🔑 Replace with your key if needed
-
-# # ---------------------------
-# # Home, About, Contact routes
-# # ---------------------------
-# @main_bp.route('/')
-# def home():
-#     return render_template('index.html')
-
-# @main_bp.route('/about')
-# def about():
-#     return render_template('About.html')
-
-# @main_bp.route('/contact', methods=['GET', 'POST'])
-# def contact():
-#     # Your existing email form logic here
-#     return render_template('Contact.html')
-
-
-# # ---------------------------
-# # Live Video Frame Analysis
-# # ---------------------------
-# # @main_bp.route('/api/analyze-frame', methods=['POST'])
-# # def analyze_frame_endpoint():
-# #     """
-# #     Receives a video frame (base64) and sends it to Gemini AI for dynamic analysis.
-# #     Returns detected objects + description.
-# #     """
-# #     try:
-# #         data = request.json
-# #         image_data = data.get("image_data")
-# #         prompt_text = "Describe what the blind user is seeing and warn about obstacles."
-
-# #         if not image_data:
-# #             return jsonify({"error": "No image data received"}), 400
-
-# #         # -------------------------
-# #         # Prepare the payload for Gemini
-# #         # -------------------------
-# #         # image_data is base64, remove the "data:image/jpeg;base64," prefix if exists
-# #         if image_data.startswith("data:image"):
-# #             image_data = image_data.split(",")[1]
-
-# #         payload = {
-# #             "prompt": prompt_text,
-# #             "image_base64": image_data
-# #         }
-
-# #         headers = {
-# #             "Authorization": f"Bearer {GEMINI_API_KEY}",
-# #             "Content-Type": "application/json"
-# #         }
-
-# #         # -------------------------
-# #         # Call Gemini API
-# #         # -------------------------
-# #         response = requests.post(
-# #             "https://api.openai.com/v1/vision/describe",  # Replace with correct Gemini endpoint
-# #             headers=headers,
-# #             json=payload,
-# #             timeout=10
-# #         )
-
-# #         if response.status_code != 200:
-# #             return jsonify({"error": f"AI API error: {response.text}"}), 500
-
-# #         ai_result = response.json()
-
-# #         # Example structure returned by Gemini (adjust if different)
-# #         description = ai_result.get("description", "No description returned")
-# #         detected_objects = ai_result.get("objects", [])
-
-# #         # -------------------------
-# #         # Add small delay to avoid API overload (2 sec)
-# #         # -------------------------
-# #         time.sleep(2)
-
-# #         return jsonify({
-# #             "status": "ok",
-# #             "prompt_used": prompt_text,
-# #             "audioDescription": description,
-# #             "detectedObjects": detected_objects
-# #         }), 200
-
-# #     except Exception as e:
-# #         print("Error in /api/analyze-frame:", e)
-# #         return jsonify({"error": "Internal server error"}), 500
-
-
-
-
-
-
-
-
-
-
-
-# @main_bp.route('/api/analyze-frame', methods=['POST'])
-# def analyze_frame_endpoint():
-#     try:
-#         data = request.json
-#         image_data = data.get("image_data")
-#         prompt_text = "Describe what the blind user is seeing and warn about obstacles."
-
-#         if not image_data:
-#             return jsonify({"error": "No image data received"}), 400
-
-#         if image_data.startswith("data:image"):
-#             image_data = image_data.split(",")[1]
-
-#         payload = {
-#             "prompt": prompt_text,
-#             "image_base64": image_data
-#         }
-
-#         headers = {
-#             "Authorization": f"Bearer {GEMINI_API_KEY}",
-#             "Content-Type": "application/json"
-#         }
-
-#         response = requests.post(
-#             "https://api.openai.com/v1/vision/describe",  # check endpoint
-#             headers=headers,
-#             json=payload,
-#             timeout=10
-#         )
-
-#         print("Gemini API status:", response.status_code)
-#         print("Gemini API response:", response.text)
-
-#         response.raise_for_status()  # Raise error if status code not 2xx
-
-#         ai_result = response.json()
-#         description = ai_result.get("description", "No description returned")
-#         detected_objects = ai_result.get("objects", [])
-
-#         time.sleep(2)  # 2 sec delay
-
-#         return jsonify({
-#             "status": "ok",
-#             "prompt_used": prompt_text,
-#             "audioDescription": description,
-#             "detectedObjects": detected_objects
-#         }), 200
-
-#     except requests.exceptions.RequestException as re:
-#         print("Requests error:", re)
-#         return jsonify({"error": "Error calling Gemini API"}), 500
-#     except Exception as e:
-#         print("General error:", e)
-#         return jsonify({"error": "Internal server error"}), 500
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 from flask import Flask, render_template, request, jsonify, Blueprint
 import time
 import random
+import base64
+import requests
+import json
+from datetime import datetime
 
 main_bp = Blueprint("main", __name__)
-main_bp.secret_key = "supersecretkey"  # for flash messages
+main_bp.secret_key = "supersecretkey"
 
-# ---------------------------
-# Home, About, Contact routes
-# ---------------------------
+# ========== USE YOUR API KEY ==========
+GEMINI_API_KEY = "AIzaSyDl9ZLcFVhC956XjWpGQ74MamMsCxbwalA"  # Your API key
+# ======================================
+
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+
 @main_bp.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('Index.html')
 
 @main_bp.route('/about')
 def about():
@@ -196,86 +28,85 @@ def about():
 
 @main_bp.route('/contact', methods=['GET', 'POST'])
 def contact():
-    # Your existing email form logic here
     return render_template('Contact.html')
 
-
-# ---------------------------
-# MOCK AI RESPONSES for testing dynamic output
-# ---------------------------
-LIVE_MOCK_RESPONSES = [
-    {
-        "detectedObjects": [
-            {"name": "mug on desk", "confidence": 0.95, "warning": False},
-            {"name": "keyboard", "confidence": 0.92, "warning": False}
-        ],
-        "audioDescription": "I see a mug on the desk to your right. The keyboard is centered."
-    },
-    {
-        "detectedObjects": [
-            {"name": "doorway", "confidence": 0.88, "warning": False},
-            {"name": "small box on floor", "confidence": 0.75, "warning": True}
-        ],
-        "audioDescription": "You are facing a doorway. Warning: There is a small box on the floor straight ahead."
-    },
-    {
-        "detectedObjects": [
-            {"name": "chair", "confidence": 0.90, "warning": False},
-            {"name": "laptop", "confidence": 0.93, "warning": False}
-        ],
-        "audioDescription": "A chair is in front of you. The laptop is on the table slightly to your left."
-    }
-]
-
-STATIC_PROMPT = "Describe what the blind user is seeing and warn about obstacles."
-
-
-# ---------------------------
-# Live Video Frame Analysis Endpoint
-# ---------------------------
 @main_bp.route('/api/analyze-frame', methods=['POST'])
-def analyze_frame_endpoint():
+def analyze_frame():
+    """SIMPLE endpoint - waits for quota reset"""
     try:
-        data = request.json
-        image_data = data.get("image_data")
-
+        data = request.get_json()
+        image_data = data.get("image_data", "")
+        
         if not image_data:
-            return jsonify({"error": "No image data received"}), 400
-
-        # Simulate AI delay 2-3 seconds
+            return jsonify({"status": "error", "error": "No image"}), 400
+        
+        # Check image quality
+        if "base64," in image_data:
+            clean_data = image_data.split("base64,")[1]
+            if len(clean_data) < 20000:  # Less than ~15KB
+                return jsonify({
+                    "status": "error",
+                    "error": "Image too dark/small",
+                    "audioDescription": "Camera image is too dark. Please improve lighting.",
+                    "detectedObjects": []
+                }), 400
+        
+        print(f"📸 Frame at {datetime.now().strftime('%H:%M:%S')}")
+        
+        # Wait 2-3 seconds
         time.sleep(2 + random.random())
-
-        # Pick a random mock response to simulate dynamic output
-        response = random.choice(LIVE_MOCK_RESPONSES)
-
+        
+        # For NOW: Return wait message
+        # TOMORROW: Change this to call real API
+        
+        hour = datetime.now().hour
+        if hour < 12:
+            time_desc = "morning"
+        elif hour < 18:
+            time_desc = "afternoon"
+        else:
+            time_desc = "evening"
+        
         return jsonify({
-            "status": "ok",
-            "prompt_used": STATIC_PROMPT,
-            "audioDescription": response["audioDescription"],
-            "detectedObjects": response["detectedObjects"]
+            "status": "quota_wait",
+            "audioDescription": f"System is ready for tomorrow. Today's API quota is used. Check back after 12:30 PM IST for real AI vision.",
+            "detectedObjects": [
+                {"name": "System Status", "confidence": 1.0, "warning": True, "position": "system"},
+                {"name": f"{time_desc.title()}", "confidence": 0.8, "warning": False, "position": "time"}
+            ],
+            "timestamp": datetime.now().isoformat()
         }), 200
-
+            
     except Exception as e:
-        print("Error in /api/analyze-frame:", e)
-        return jsonify({"error": "Internal server error"}), 500
+        print(f"💥 Error: {str(e)}")
+        return jsonify({"status": "error", "error": str(e)}), 500
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+@main_bp.route('/api/test-connection', methods=['GET'])
+def test_connection():
+    """Test if API key will work tomorrow"""
+    try:
+        # Simple test - doesn't consume image quota
+        test_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
+        response = requests.get(test_url, timeout=5)
+        
+        if response.status_code == 200:
+            return jsonify({
+                "status": "key_valid",
+                "message": "API key is valid. Quota should reset tomorrow.",
+                "timestamp": datetime.now().isoformat()
+            })
+        elif response.status_code == 429:
+            return jsonify({
+                "status": "quota_exceeded",
+                "message": "Quota exceeded today. Will reset tomorrow.",
+                "timestamp": datetime.now().isoformat()
+            }), 200
+        else:
+            return jsonify({
+                "status": "key_issue",
+                "message": f"Key issue: {response.status_code}",
+                "timestamp": datetime.now().isoformat()
+            }), 500
+            
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
